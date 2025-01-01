@@ -18,6 +18,7 @@ const postSchema = new Schema({
           message: '{VALUE} is not supported', // Correct placement of the message
         },
       },
+      thumbnail: { type: String, required: true },
     description: { type: String, required: true },
     creator: { type: Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });

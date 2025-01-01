@@ -5,7 +5,7 @@ const userSchema = new Schema({
     email: { type: String, required: true },
     password: { type: String, required: true },
     avatar: { type: String},
-    posts: {type: Number, default: 0},
+    posts: [{type: Schema.Types.ObjectId, ref: 'Post', required: true}],
 });
 
 const User = model('User', userSchema);
