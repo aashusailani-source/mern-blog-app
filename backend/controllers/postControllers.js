@@ -5,7 +5,6 @@ const fs = require('fs');
 const { v4: uuid } = require('uuid');
 
 // POST : api/posts
-
 // Protected Route
 exports.createPost = async (req, res) => {
 
@@ -76,7 +75,7 @@ exports.createPost = async (req, res) => {
 
 // GET : api/posts/get-allposts
 // Unprotected Route
-exports.getPosts = async (req, res) => {
+exports.getAllPosts = async (req, res) => {
     try {
         const posts = await Post.find().sort({ createdAt: -1 })
         .populate('creator', 'name email');
@@ -142,6 +141,14 @@ exports.getUserPosts = async (req, res) => {
 
 
 // PATCH : api/posts/:id
+// Protected Route
+exports.editPost = async (req, res) => {
+    try{
+        return res.status(200).json({message: "its in development"});
+    }catch(err){
+        return res.status(500).json({error: {message: "Editing post failed"}});
+    }
+}
 
 
 // DELETE : api/posts/:id
@@ -149,26 +156,42 @@ exports.getUserPosts = async (req, res) => {
 exports.deletePost = async (req, res) => {
     try {
         const { id } = req.params;
-        if(!id) {
+
+        if (!id) {
             return res.status(400).json({ message: "Post ID is required" });
         }
 
+        // Find the post by ID
         const post = await Post.findById(id);
-        const fileName = post?.thumbnail;
-        if(fileName) {
-            fs.unlinkSync(path.join(__dirname, '..', '/uploads', fileName), async (err) => {
-                if(err) {
-                    return res.status(500).json({ message: "File deletion failed" });
-                } else {
-                    await Post.findByIdAndDelete(id);
-                    const currentUser = await User.findByIdAndUpdate(req.user.userId, { $pull: { posts: id } });
-
-                    console.log("File deleted successfully");
-                }
-            });
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
         }
+
+        // Get the thumbnail file name and construct the file path
+        const filePath = post.thumbnail
+            ? path.join(__dirname, '..', 'uploads', post.thumbnail)
+            : null;
+
+        // Delete the file if it exists
+        if (filePath && fs.existsSync(filePath)) {
+            try {
+                fs.unlinkSync(filePath);
+                console.log("File deleted successfully");
+            } catch (err) {
+                console.error("Error deleting file:", err);
+                return res.status(500).json({ message: "File deletion failed" });
+            }
+        }
+
+        // Delete the post from the database
+        await Post.findByIdAndDelete(id);
+
+        // Update the user's posts array
+        await User.findByIdAndUpdate(req.user.userId, { $pull: { posts: id } });
+
         return res.status(200).json({ message: "Post deleted successfully" });
     } catch (error) {
+        console.error("Error in deletePost:", error);
         return res.status(500).json({ message: error.message });
     }
 };

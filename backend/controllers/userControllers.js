@@ -57,7 +57,7 @@ const loginUser = async (req, res) => {
     try{
         const {email, password} = req.body;
         const newEmail = email.toLowerCase();
-        const user = await User.findOne({email: newEmail});
+        const user = await User.findOne({email: newEmail}).populate('posts');
         if(!user) {
             return res.status(400).json({error: {
                 message: "User not found",
@@ -75,7 +75,7 @@ const loginUser = async (req, res) => {
 
         const token = jwt.sign({userId: user._id}, process.env.JWT_SECRET, {expiresIn: '1h'});
 
-        res.cookie('token', token, {httpOnly: true, sameSite: 'Strict', maxAge: 3600000});
+        res.cookie('token', token, { httpOnly: true, sameSite: 'Strict', maxAge: 3600000 });
 
         res.setHeader('Authorization', `Bearer ${token}`);
 
@@ -86,6 +86,7 @@ const loginUser = async (req, res) => {
                 username: user.username,
                 email: user.email,
             },
+            posts: user.posts,
             token,
         });
     }catch(err){
